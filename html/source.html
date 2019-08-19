@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html>
+<title>STAMP Source</title>
+<head>
+<script>
+
+var configResp = 0;
+
+function getConfiguration() 
+{    
+	if(configResp == 0)
+	{
+		var xhttp = new XMLHttpRequest();
+		var requestURI;
+
+		requestURI = "/ConfigValue";
+
+		xhttp.onreadystatechange = function() 
+		{
+			if (this.readyState == 4 && this.status == 200) 
+			{
+				configResp = 0;
+
+				var configParts = this.responseText.split('*');
+				//console.log("ConfigValue : "+configParts[0]+" "+configParts[1]+" "+configParts[2]);
+
+				if(configParts[12] == 0)
+				{
+					var displayconfig = "\nVideo Scalability: Disable"+"\nVideo Codec: "+configParts[0]+"\nVideo Resolution: "+configParts[1]+"\nVideo Bitrate: "+configParts[2]+"\n\nAudio Codec: "+configParts[3]+"\nAudio Bitrate: "+configParts[4]+"\n\nServer IP:"+configParts[5]+"\nExternal IP:"+configParts[6]+"\nServer Port: "+configParts[7]+"\nExternal Port: "+configParts[21]+"\nHTTP Port: "+configParts[8]+"\n\nChannel File: "+configParts[9]+"\nChannel ID: "+configParts[10];
+				}
+				else
+				{
+					var displayconfig = "\nVideo Scalability: Enable"+"\nVideo Codec: "+configParts[0]+"\nVideo 1 Resolution: "+configParts[13]+"\nVideo 1 Bitrate: "+configParts[14]+"\nVideo 2 Resolution: "+configParts[15]+"\nVideo 2 Bitrate: "+configParts[16]+"\nVideo 3 Resolution: "+configParts[17]+"\nVideo 3 Bitrate: "+configParts[18]+"\nVideo 4 Resolution: "+configParts[19]+"\nVideo 4 Bitrate: "+configParts[20]+"\n\nAudio Codec: "+configParts[3]+"\nAudio Bitrate: "+configParts[4]+"\n\nServer IP:"+configParts[5]+"\nExternal IP:"+configParts[6]+"\nServer Port: "+configParts[7]+"\nExternal Port: "+configParts[21]+"\nHTTP Port: "+configParts[8]+"\n\nChannel File: "+configParts[9]+"\nChannel ID: "+configParts[10];
+				}
+
+				document.getElementById("textarea").value = displayconfig;
+			
+				if(configParts[11] == "1")
+					document.getElementById("idStratStop").innerHTML = "Stop";
+				else
+					document.getElementById("idStratStop").innerHTML = "Start";
+
+				//console.log("ConfigValue : "+configParts[10]);
+
+			}
+		};
+
+		xhttp.open("GET", requestURI, true);
+
+		xhttp.send();
+		configResp = 1;
+
+		startLogFeed();
+		startLiveFeed();
+	}
+}
+
+function startStop() 
+{  
+	var value;
+
+	value = document.getElementById("idStratStop").innerHTML;
+
+	if(document.getElementById("idStratStop").innerHTML == "Start")
+		document.getElementById("idStratStop").innerHTML = "Stop";
+	else
+		document.getElementById("idStratStop").innerHTML = "Start";
+  
+        var xhttp = new XMLHttpRequest();
+	var requestURI;
+
+	requestURI = "/StartStop";
+
+	xhttp.onreadystatechange = function() 
+	{
+		if (this.readyState == 4 && this.status == 200) 
+		{
+
+		}
+	};
+
+	xhttp.open("POST", requestURI, true);
+
+	//Send the proper header information along with the request
+	xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+
+	xhttp.send(value);
+}
+	
+var fps = 10;
+var now;
+var then = Date.now();
+var interval = 1000/fps;
+var delta;
+var liveURL = "liveFeed?Frame=";
+var frameCount = 5;
+
+function drawLive() 
+{   
+    requestAnimationFrame(drawLive);
+     
+    now = Date.now();
+    delta = now - then;
+     
+    if (delta > interval) {
+	//console.log("now:"+now+" then:"+then+" delta:"+delta+" interval:"+interval);
+	 if(document.images.liveimage.complete == true)//
+	 {
+		then = now - (delta % interval);
+
+		document.images.liveimage.src=liveURL+frameCount;
+
+		frameCount = frameCount + 1;  
+	 }
+         // ... Code for Drawing the Frame ...
+    }
+}
+ 
+function startLiveFeed()
+{drawLive();
+}
+
+
+var lograte = 1;
+var lognow;
+var logthen = Date.now();
+var loginterval = 1000/lograte;
+var logdelta;
+var logCount = 5;
+var prevlogCount = 0;
+var logCount2 = 5;
+var textareaLogResp = 0;
+var textareaLog2Resp = 0;
+
+function drawLog() 
+{   
+    requestAnimationFrame(drawLog);
+     
+    lognow = Date.now();
+    logdelta = lognow - logthen;
+     
+    if (logdelta > loginterval) {
+        
+        logthen = lognow - (logdelta % loginterval);
+	
+	if(textareaLogResp == 0)
+  	{
+		var xhttp = new XMLHttpRequest();
+		var requestURI;
+
+		requestURI = "/LogValue?Count="+logCount;
+
+		xhttp.onreadystatechange = function() 
+		{
+			if (this.readyState == 4 && this.status == 200) 
+			{
+				textareaLogResp = 0; 
+
+				document.getElementById("textareaLog").value = this.responseText;
+			
+				//console.log("CaptCount : "+this.responseText);
+			}
+		};
+
+		xhttp.open("GET", requestURI, true);
+
+		xhttp.send();		
+	
+		logCount = logCount + 1;  
+		
+		textareaLogResp = 1;
+	}
+
+	// Log2
+	if(textareaLog2Resp == 0)
+	{
+		var xhttp2 = new XMLHttpRequest();
+		var requestURI2;
+
+		requestURI2 = "/LogValue2?Count="+logCount2;
+
+		xhttp2.onreadystatechange = function() 
+		{
+			if (this.readyState == 4 && this.status == 200) 
+			{
+				textareaLog2Resp = 0; 
+
+				document.getElementById("textareaLog2").value = this.responseText;
+
+			}
+		};
+
+		xhttp2.open("GET", requestURI2, true);
+
+		xhttp2.send();
+
+		logCount2 = logCount2 + 1;  
+
+		textareaLog2Resp = 1;
+	}
+	
+	getConfiguration();
+        // ... Code for Drawing the Frame ...
+    }
+}
+ 
+function startLogFeed()
+{
+	drawLog();
+}
+</script>
+<style>
+.ctn {
+    color: #183963;
+    padding-left: 15px;
+    font: bold 24pt Arial;
+    white-space: nowrap;
+}
+.taskbar_cell {
+    color: #788ba9;
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 13px;
+    font-weight: bold;
+    font-variant: normal;
+    text-decoration: none;
+    text-align: center;
+}
+.main_table td {
+    padding-top: 3px;
+    padding-bottom: 3px;
+    text-align: center;
+}
+.main_table_cell {
+    text-align: left;
+    padding-right: 10px;
+    padding-left: 10px;
+    color: #FFFFFF;
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 13px;
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+}
+.main_table_header {
+    font-size: 13px;
+    color: #FFFFFF;
+}
+.td_clearlog {
+    text-align: right;
+    padding-right: 18px;
+    vertical-align: bottom;
+}
+.main_table TEXTAREA {
+    color: #FFFFFD;
+    font-size: 12px;
+    text-decoration: none;
+    font-family: Verdana;
+    border-style: solid;
+    border-width: 1px;
+    border-color: #000000;
+    background-color: #3f5376;
+    SCROLLBAR-BASE-COLOR: #ebeef3;
+    SCROLLBAR-FACE-COLOR: #506b89;
+    SCROLLBAR-HIGHLIGHT-COLOR: #ebeef3;
+    SCROLLBAR-SHADOW-COLOR: #000000;
+    SCROLLBAR-3DLIGHT-COLOR: #ebeef3;
+    SCROLLBAR-ARROW-COLOR: #ccd3dd;
+    SCROLLBAR-TRACK-COLOR: #506b89;
+    SCROLLBAR-DARKSHADOW-COLOR: #153b63;
+    width: 250px;
+    height: 283px;
+}
+
+
+.content_table {
+    padding-top: 13px;
+    padding-right: 20px;
+    padding-left: 22px;
+    padding-bottom: 11px;
+    margin-top: 0px;
+    margin-left: 4px;
+    margin-right: 0px;
+    margin-bottom: 0px;
+    border-top: 0px solid #ebeef3;
+    border-left: 0px solid #ebeef3;
+    border-right: 0px solid #000000;
+    border-bottom: 0px solid #000000;
+    /* background-color: #506b89; */
+    background-image: url(maintable_hg.bmp);
+    vertical-align: top;
+    width: 100%;
+    height: 439px;
+}
+
+
+</style>
+</head>
+<body onload="getConfiguration()">
+
+<table width="100%" cellspacing="0" style="margin-top:2px">
+<tbody>
+<div style="padding-left: 254px;position: absolute;padding-top: 15px; color: #000680;">Version 3.1</div>
+<tr>
+<td width="100px" style="padding-right:20px;" id="td_devtype">
+	<div class="ctn">STAMP Source</div>
+</td>
+
+<td id="td_menubar" class="taskbar_cell" style="white-space:nowrap;text-align:center;"><span class="taskbar_cell_sel">
+
+<td id="td_menubar" class="taskbar_cell" style="white-space:nowrap;text-align:center;">
+<span class="taskbar_cell_sel"><img alt="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAJCAMAAADNcxasAAAAK3RFWHRDcmVhdGlvbiBUaW1lAEZyIDI2IEphbiAyMDA3IDExOjA5OjI3ICswMTAwj9LrFAAAAAd0SU1FB9cJBQkwKBwDsfIAAAAJcEhZcwAACxIAAAsSAdLdfvwAAAAEZ0FNQQAAsY8L/GEFAAAABlBMVEX///8QOWOT281WAAAAAXRSTlMAQObYZgAAABtJREFUeNpjYGQAAUZGCMkIIRkhJCOCjVADIgAC7QAark765wAAAABJRU5ErkJggg==" style="margin-right:5px">LIVEPAGE</span>&nbsp;|&nbsp;
+<span><a href="/Settings.html" target="_top">CONFIGURATION</a></span>
+</td>
+
+</tr>
+
+<tr>
+<td>
+<div class="main_table" id="divSysLog" style="display: block;">
+<table border="0" cellspacing="0" cellpadding="0" id="tblSysLog" style="background: #a1b1cc;">
+	<tbody><tr>
+		<td class="main_table_cell">
+			<span class="main_table_header">Current Configuration</span>
+		</td>
+	</tr>
+	<tr>
+		<td class="main_table_cell" colspan="2">
+			<form id="form1" name="form1" method="post" action="http://127.0.0.1:8000/menuframe01.html">
+				<textarea id="textarea" name="textarea" readonly=""></textarea>
+			</form>
+		</td>
+	</tr>
+	<tr>
+		<td class="main_table_cell">
+			<span class="main_table_header">P2P Statistics</span>
+		</td>
+	</tr>
+	<tr>
+		<td class="main_table_cell" colspan="2">
+			<form id="form2" name="form2">
+				<textarea id="textareaLog2" name="textareaLog2" readonly=""></textarea>
+			</form>
+		</td>
+	
+	</tr></tbody>
+</table>
+</div>
+</td>
+<td id="td_menubar" class="taskbar_cell" style="white-space:nowrap;text-align:center;"><span class="taskbar_cell_sel">
+<td>
+<div class="main_table" id="divSysLog" style="display: block;">
+<table class="content_table" width="100%" height="100%" border="0" cellspacing="0" cellpadding="0" style="background: #a1b1cc;">
+  <tbody><tr>
+    <td>
+	<img id='idliveimage' name='liveimage' src="data:image/jpeg;base64,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" alt="Live Feed" height="240" width="352" style="border-width: 20px;border-style: ridge;border-color: #788ba9;">	
+	</td>
+  </tr>
+<tr>
+	<td>
+		<button id='idStratStop' onclick="startStop()" style="width:130px;font-family:verdana;font-size:20px;border-radius:20px;background-color: aliceblue;">Start</button>
+	</td>
+</tr>
+<tr>
+
+
+		<td class="main_table_cell">
+			<span class="main_table_header">System Log</span>
+		</td>
+</tr>
+<tr>
+		<td class="main_table_cell" colspan="2">
+			<form id="form1" name="form1">
+				<textarea id="textareaLog" name="textareaLog" readonly="" style="height:250px;width:80%"></textarea>
+			</form>
+		</td>
+	
+</tr>
+</tbody></table>
+</div>
+</td>
+</tr>
+
+</table>
+
+
+
+
+</body>
+</html>
+	

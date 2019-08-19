@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html>
+<title>STAMP Source</title>
+<head>
+<script>
+var lograte = 1;
+var lognow;
+var logthen = Date.now();
+var loginterval = 1000/lograte;
+var logdelta;
+var logCount2 = 8;
+var textareaLog2Resp = 0;
+
+function drawLog() 
+{   
+    requestAnimationFrame(drawLog);
+     
+    lognow = Date.now();
+    logdelta = lognow - logthen;
+     
+    if (logdelta > loginterval) {
+        
+        logthen = lognow - (logdelta % loginterval);
+
+	if(textareaLog2Resp == 0)
+	{
+		var xhttp = new XMLHttpRequest();
+		var requestURI;
+
+		requestURI = "/LogValue2?Count="+logCount2;
+
+		xhttp.onreadystatechange = function() 
+		{
+			if (this.readyState == 4 && this.status == 200) 
+			{
+				textareaLog2Resp = 0;
+
+				document.getElementById("textareaLog2").value = this.responseText;
+			
+				//console.log("CaptCount : "+this.responseText);
+			}
+		};
+
+		xhttp.open("GET", requestURI, true);
+
+		xhttp.send();		
+
+		logCount2 = logCount2 + 1;  
+
+		textareaLog2Resp = 1;
+	}
+	
+    }
+}
+
+
+function getConfiguration() 
+{    
+        var xhttp = new XMLHttpRequest();
+	var requestURI;
+
+	requestURI = "/ConfigValue";
+
+	xhttp.onreadystatechange = function() 
+	{
+		if (this.readyState == 4 && this.status == 200) 
+		{
+			var configParts = this.responseText.split('*');
+			//console.log("ConfigValue : "+configParts[0]+" "+configParts[1]+" "+configParts[2]);
+
+
+			if(configParts[12] == 0)
+			{
+				var displayconfig = "\nVideo Scalability: Disable"+"\nVideo Codec: "+configParts[0]+"\nVideo Resolution: "+configParts[1]+"\nVideo Bitrate: "+configParts[2]+"\n\nAudio Codec: "+configParts[3]+"\nAudio Bitrate: "+configParts[4]+"\n\nServer IP:"+configParts[5]+"\nExternal IP:"+configParts[6]+"\nServer Port: "+configParts[7]+"\nExternal Port: "+configParts[21]+"\nHTTP Port: "+configParts[8]+"\n\nChannel File: "+configParts[9]+"\nChannel ID: "+configParts[10];
+			}
+			else
+			{
+				var displayconfig = "\nVideo Scalability: Enable"+"\nVideo Codec: "+configParts[0]+"\nVideo 1 Resolution: "+configParts[13]+"\nVideo 1 Bitrate: "+configParts[14]+"\nVideo 2 Resolution: "+configParts[15]+"\nVideo 2 Bitrate: "+configParts[16]+"\nVideo 3 Resolution: "+configParts[17]+"\nVideo 3 Bitrate: "+configParts[18]+"\nVideo 4 Resolution: "+configParts[19]+"\nVideo 4 Bitrate: "+configParts[20]+"\n\nAudio Codec: "+configParts[3]+"\nAudio Bitrate: "+configParts[4]+"\n\nServer IP:"+configParts[5]+"\nExternal IP:"+configParts[6]+"\nServer Port: "+configParts[7]+"\nExternal Port: "+configParts[21]+"\nHTTP Port: "+configParts[8]+"\n\nChannel File: "+configParts[9]+"\nChannel ID: "+configParts[10];
+			}
+
+			document.getElementById("textarea").value = displayconfig;
+
+			document.getElementById("idVideoCodec").value = configParts[0];
+			document.getElementById("idVideoRes").value = configParts[1];
+			document.getElementById("idVideoBitrate").value = configParts[2];
+
+			document.getElementById("idAudioCodec").value = configParts[3];
+			document.getElementById("idAudioBitrate").value = configParts[4];
+
+			document.getElementById("idServerIP").value = configParts[5];
+			document.getElementById("idExternalIP").value = configParts[6];
+			document.getElementById("idServerPort").value = configParts[7];
+			document.getElementById("idHttpPort").value = configParts[8];
+
+			//document.getElementById("idChannelFile").value = configParts[8];
+			document.getElementById("idChannelId").value = configParts[10];
+
+			document.getElementById("idVideoScalibility").value = configParts[12];
+
+			document.getElementById("idVideoRes1").value = configParts[13];
+			document.getElementById("idVideoBitrate1").value = configParts[14];
+
+			document.getElementById("idVideoRes2").value = configParts[15];
+			document.getElementById("idVideoBitrate2").value = configParts[16];
+
+			document.getElementById("idVideoRes3").value = configParts[17];
+			document.getElementById("idVideoBitrate3").value = configParts[18];
+
+			document.getElementById("idVideoRes4").value = configParts[19];
+			document.getElementById("idVideoBitrate4").value = configParts[20];
+
+			document.getElementById("idExternalPort").value = configParts[21];
+
+			scalabilityModeCallback();
+		}
+	};
+
+	xhttp.open("GET", requestURI, true);
+
+	xhttp.send();
+
+	startLogFeed();
+
+	
+}
+
+function sleep(milliseconds) {
+  var start = new Date().getTime();
+  for (var i = 0; i < 1e7; i++) {
+    if ((new Date().getTime() - start) > milliseconds){
+      break;
+    }
+  }
+}
+
+function scalabilityModeCallback()
+{
+	var scalabilitymode;
+	
+	scalabilitymode = document.getElementById('idVideoScalibility').value;
+
+	if(scalabilitymode == 1)
+	{
+		console.log('Scalability On');
+
+		document.getElementById('idVideoResLabel').style.display='none';
+		document.getElementById('idVideoRes').style.display='none';
+
+		document.getElementById('idVideoBitrateLabel').style.display='none';
+		document.getElementById('idVideoBitrate').style.display='none';
+
+		document.getElementById('idVideoResLabel1').style.display='inline';
+		document.getElementById('idVideoRes1').style.display='inline';
+		document.getElementById('idVideoBitrateLabel1').style.display='inline';
+		document.getElementById('idVideoBitrate1').style.display='inline';
+
+		document.getElementById('idVideoResLabel2').style.display='inline';
+		document.getElementById('idVideoRes2').style.display='inline';
+		document.getElementById('idVideoBitrateLabel2').style.display='inline';
+		document.getElementById('idVideoBitrate2').style.display='inline';
+
+		document.getElementById('idVideoResLabel3').style.display='inline';
+		document.getElementById('idVideoRes3').style.display='inline';
+		document.getElementById('idVideoBitrateLabel3').style.display='inline';
+		document.getElementById('idVideoBitrate3').style.display='inline';
+
+		document.getElementById('idVideoResLabel4').style.display='inline';
+		document.getElementById('idVideoRes4').style.display='inline';
+		document.getElementById('idVideoBitrateLabel4').style.display='inline';
+		document.getElementById('idVideoBitrate4').style.display='inline';
+
+	}
+	else
+	{
+		console.log('Scalability Off');
+
+		document.getElementById('idVideoResLabel').style.display='inline';
+		document.getElementById('idVideoRes').style.display='inline';
+
+		document.getElementById('idVideoBitrateLabel').style.display='inline';
+		document.getElementById('idVideoBitrate').style.display='inline';
+
+		document.getElementById('idVideoResLabel1').style.display='none';
+		document.getElementById('idVideoRes1').style.display='none';
+		document.getElementById('idVideoBitrateLabel1').style.display='none';
+		document.getElementById('idVideoBitrate1').style.display='none';
+
+		document.getElementById('idVideoResLabel2').style.display='none';
+		document.getElementById('idVideoRes2').style.display='none';
+		document.getElementById('idVideoBitrateLabel2').style.display='none';
+		document.getElementById('idVideoBitrate2').style.display='none';
+
+		document.getElementById('idVideoResLabel3').style.display='none';
+		document.getElementById('idVideoRes3').style.display='none';
+		document.getElementById('idVideoBitrateLabel3').style.display='none';
+		document.getElementById('idVideoBitrate3').style.display='none';
+
+		document.getElementById('idVideoResLabel4').style.display='none';
+		document.getElementById('idVideoRes4').style.display='none';
+		document.getElementById('idVideoBitrateLabel4').style.display='none';
+		document.getElementById('idVideoBitrate4').style.display='none';
+
+	}
+
+}
+
+function saveConfiguration() 
+{    
+        var xhttp = new XMLHttpRequest();
+	var requestURI;
+
+	var configData = document.getElementById("idVideoCodec").value+"*"+document.getElementById("idVideoRes").value+"*"+document.getElementById("idVideoBitrate").value+"*"+document.getElementById("idAudioCodec").value+"*"+document.getElementById("idAudioBitrate").value+"*"+document.getElementById("idServerIP").value+"*"+document.getElementById("idExternalIP").value+"*"+document.getElementById("idServerPort").value+"*"+document.getElementById("idHttpPort").value+"*"+document.getElementById("idChannelId").value+"*"+document.getElementById("idVideoScalibility").value+"*"+document.getElementById("idVideoRes1").value+"*"+document.getElementById("idVideoBitrate1").value+"*"+document.getElementById("idVideoRes2").value+"*"+document.getElementById("idVideoBitrate2").value+"*"+document.getElementById("idVideoRes3").value+"*"+document.getElementById("idVideoBitrate3").value+"*"+document.getElementById("idVideoRes4").value+"*"+document.getElementById("idVideoBitrate4").value+"*"+document.getElementById("idExternalPort").value+"*"+document.getElementById("idChannelFile").value;
+
+	requestURI = "/SaveConfig";
+
+	xhttp.onreadystatechange = function() 
+	{
+		if (this.readyState == 4 && this.status == 200) 
+		{
+			if(this.responseText == 'restart')
+			{
+				alert('HTTP Port has been changed to '+document.getElementById('idHttpPort').value+'.');
+				sleep(30000);
+			}
+
+			window.location.href = window.location.protocol+'//'+window.location.hostname+':'+document.getElementById('idHttpPort').value+'/';
+		}
+	};
+
+	xhttp.open("POST", requestURI, true);
+
+	//Send the proper header information along with the request
+	xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+
+	xhttp.send(configData);
+}
+
+function startLogFeed()
+{
+	drawLog();
+}
+</script>
+<style>
+.ctn {
+    color: #183963;
+    padding-left: 15px;
+    font: bold 24pt Arial;
+    white-space: nowrap;
+}
+.taskbar_cell {
+    color: #788ba9;
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 13px;
+    font-weight: bold;
+    font-variant: normal;
+    text-decoration: none;
+    text-align: center;
+}
+.main_table td {
+    padding-top: 3px;
+    padding-bottom: 3px;
+    text-align: center;
+}
+.main_table_2 td {
+    padding-top: 3px;
+    padding-bottom: 3px;
+}
+.main_table_cell {
+    text-align: left;
+    padding-right: 10px;
+    padding-left: 10px;
+    color: #FFFFFF;
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 13px;
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+}
+.main_table_header {
+    font-size: 13px;
+    color: #FFFFFF;
+}
+.td_clearlog {
+    text-align: right;
+    padding-right: 18px;
+    vertical-align: bottom;
+}
+.main_table TEXTAREA {
+    color: #FFFFFD;
+    font-size: 12px;
+    text-decoration: none;
+    font-family: Verdana;
+    border-style: solid;
+    border-width: 1px;
+    border-color: #000000;
+    background-color: #3f5376;
+    SCROLLBAR-BASE-COLOR: #ebeef3;
+    SCROLLBAR-FACE-COLOR: #506b89;
+    SCROLLBAR-HIGHLIGHT-COLOR: #ebeef3;
+    SCROLLBAR-SHADOW-COLOR: #000000;
+    SCROLLBAR-3DLIGHT-COLOR: #ebeef3;
+    SCROLLBAR-ARROW-COLOR: #ccd3dd;
+    SCROLLBAR-TRACK-COLOR: #506b89;
+    SCROLLBAR-DARKSHADOW-COLOR: #153b63;
+    width: 250px;
+    height: 342px;
+}
+
+
+.content_table {
+    padding-top: 13px;
+    padding-right: 20px;
+    padding-left: 22px;
+    padding-bottom: 11px;
+    margin-top: 0px;
+    margin-left: 4px;
+    margin-right: 0px;
+    margin-bottom: 0px;
+    border-top: 0px solid #ebeef3;
+    border-left: 0px solid #ebeef3;
+    border-right: 0px solid #000000;
+    border-bottom: 0px solid #000000;
+    /* background-color: #506b89; */
+    background-image: url(maintable_hg.bmp);
+    vertical-align: top;
+    width: 100%;
+    height: 449px;
+}
+
+.setting_label {
+font-family: verdana;
+color: navy;
+}
+
+.setting_legend {
+font-family: verdana;
+color: darkred;
+}
+</style>
+</head>
+<body onload="getConfiguration()">
+
+<table width="100%" cellspacing="0" style="margin-top:2px">
+<tbody>
+<div style="padding-left: 254px;position: absolute;padding-top: 15px;color: #000680;">Version 3.1</div>
+<tr>
+<td width="100px" style="padding-right:20px;" id="td_devtype">
+	<div class="ctn">STAMP Source</div>
+</td>
+
+<td id="td_menubar" class="taskbar_cell" style="white-space:nowrap;text-align:center;"><span class="taskbar_cell_sel">
+
+<td id="td_menubar" class="taskbar_cell" style="white-space:nowrap;text-align:center;">
+<span><a href="/" target="_top">LIVEPAGE</a></span>&nbsp;|&nbsp;
+<span class="taskbar_cell_sel"><img alt="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAJCAMAAADNcxasAAAAK3RFWHRDcmVhdGlvbiBUaW1lAEZyIDI2IEphbiAyMDA3IDExOjA5OjI3ICswMTAwj9LrFAAAAAd0SU1FB9cJBQkwKBwDsfIAAAAJcEhZcwAACxIAAAsSAdLdfvwAAAAEZ0FNQQAAsY8L/GEFAAAABlBMVEX///8QOWOT281WAAAAAXRSTlMAQObYZgAAABtJREFUeNpjYGQAAUZGCMkIIRkhJCOCjVADIgAC7QAark765wAAAABJRU5ErkJggg==" style="margin-right:5px">CONFIGURATION</span>
+</td>
+
+</tr>
+
+<tr>
+<td>
+<div class="main_table" id="divSysLog" style="display: block;">
+<table border="0" cellspacing="0" cellpadding="0" id="tblSysLog" style="background: #a1b1cc;">
+	<tbody><tr>
+		<td class="main_table_cell">
+			<span class="main_table_header">Current Configuration</span>
+		</td>
+	</tr>
+	<tr>
+		<td class="main_table_cell" colspan="2">
+			<form id="form1" name="form1">
+				<textarea id="textarea" name="textarea" readonly=""></textarea>
+			</form>
+		</td>
+	</tr>
+	<tr>
+		<td class="main_table_cell">
+			<span class="main_table_header">P2P Statistics</span>
+		</td>
+	</tr>
+	<tr>
+		<td class="main_table_cell" colspan="2">
+			<form id="form2" name="form2">
+				<textarea id="textareaLog2" name="textareaLog2" readonly=""></textarea>
+			</form>
+		</td>
+
+	</tr></tbody>
+</table>
+</div>
+</td>
+<td id="td_menubar" class="taskbar_cell" style="white-space:nowrap;text-align:center;"><span class="taskbar_cell_sel">
+<td>
+<div class="main_table_2" id="divSysLog" style="display: block;">
+<table class="content_table" width="100%" height="100%" border="0" cellspacing="0" cellpadding="0" style="background: #a1b1cc;">
+  <tbody><tr>
+    <td>
+	<fieldset id='idpanelVideo' style='width:600px;height:256px;'>
+
+<legend class="setting_legend">Video Settings</legend>
+
+<p>
+	<label class="setting_label">&nbsp;&nbsp;&nbsp; Scalability</label>
+	<select id="idVideoScalibility" class="setting_label" style='position:absolute; left:460px; width:160px;' onchange='scalabilityModeCallback();'>
+		<option selected value='0'>Disable</option>
+		<option value='1'>Enable</option>
+	</select>
+
+</p>
+
+<p>
+	<label id="idVideoCodecLabel" class="setting_label">&nbsp;&nbsp;&nbsp; Video Codec</label>
+	<select id="idVideoCodec" class="setting_label" style='position:absolute; left:460px; width:160px;'>
+		<option selected value='H.264'>H.264</option>
+		<option value='MPEG-4'>MPEG-4</option>
+		<option value='MPEG-2'>MPEG-2</option>
+	</select>
+
+</p>
+
+<p>
+	<label id="idVideoResLabel" class="setting_label">&nbsp;&nbsp;&nbsp; Resolution</label>
+	<select id="idVideoRes" class="setting_label" style='position:absolute; left:460px; width:160px;'>
+		<option selected value='CIF (352x240)'>CIF (352x240)</option>
+		<option value='D1 (704x480)'>D1 (704x480)</option>
+		<option value='HD (1280x720)'>HD (1280x720)</option>
+	</select>
+
+</p>
+
+<p>
+	<label id="idVideoBitrateLabel" class="setting_label">&nbsp;&nbsp;&nbsp; Bitrate</label>
+	<select id="idVideoBitrate" class="setting_label" style='position:absolute; left:460px; width:160px;'>
+		<option selected value='512 Kbps'>512 Kbps</option>
+		<option value='768 Kbps'>768 Kbps</option>
+		<option value='1 Mbps'>1 Mbps</option>
+		<option value='2 Mbps'>2 Mbps</option>
+		<option value='3 Mbps'>3 Mbps</option>
+		<option value='4 Mbps'>4 Mbps</option>
+		<option value='6 Mbps'>6 Mbps</option>
+	</select>
+</p>
+
+<p>
+	<label id="idVideoResLabel1" class="setting_label">&nbsp;&nbsp;&nbsp; Resolution 1</label>
+	<select id="idVideoRes1" class="setting_label" style='position:absolute; left:460px; width:160px;'>
+		<option selected value='(256x144)'>256x144</option>
+		<option value='(320x180)'>320x180</option>
+		<option value='(640x360)'>640x360</option>
+		<option value='(704x396)'>704x396</option>
+		<option value='(1280x720)'>1280x720</option>
+	</select>
+
+	<label id="idVideoBitrateLabel1" style="position: absolute;left: 628px;" class="setting_label">&nbsp;&nbsp;&nbsp; Bitrate 1</label>
+	<select id="idVideoBitrate1" class="setting_label" style='position:absolute; left:757px; width:160px;'>
+		<option selected value='128 Kbps'>128 Kbps</option>
+		<option value='256 Kbps'>256 Kbps</option>
+		<option value='512 Kbps'>512 Kbps</option>
+		<option value='768 Kbps'>768 Kbps</option>
+		<option value='1 Mbps'>1 Mbps</option>
+		<option value='2 Mbps'>2 Mbps</option>
+	</select>
+</p>
+
+<p>
+	<label id="idVideoResLabel2" class="setting_label">&nbsp;&nbsp;&nbsp; Resolution 2</label>
+	<select id="idVideoRes2" class="setting_label" style='position:absolute; left:460px; width:160px;'>
+		<option selected value='(256x144)'>256x144</option>
+		<option value='(320x180)'>320x180</option>
+		<option value='(640x360)'>640x360</option>
+		<option value='(704x396)'>704x396</option>
+		<option value='(1280x720)'>1280x720</option>
+	</select>
+
+	<label id="idVideoBitrateLabel2" style="position: absolute;left: 628px;" class="setting_label">&nbsp;&nbsp;&nbsp; Bitrate 2</label>
+	<select id="idVideoBitrate2" class="setting_label" style='position:absolute; left:757px; width:160px;'>
+		<option selected value='128 Kbps'>128 Kbps</option>
+		<option value='256 Kbps'>256 Kbps</option>
+		<option value='512 Kbps'>512 Kbps</option>
+		<option value='768 Kbps'>768 Kbps</option>
+		<option value='1 Mbps'>1 Mbps</option>
+		<option value='2 Mbps'>2 Mbps</option>
+	</select>
+</p>
+
+<p>
+	<label id="idVideoResLabel3" class="setting_label">&nbsp;&nbsp;&nbsp; Resolution 3</label>
+	<select id="idVideoRes3" class="setting_label" style='position:absolute; left:460px; width:160px;'>
+		<option selected value='(256x144)'>256x144</option>
+		<option value='(320x180)'>320x180</option>
+		<option value='(640x360)'>640x360</option>
+		<option value='(704x396)'>704x396</option>
+		<option value='(1280x720)'>1280x720</option>
+	</select>
+
+	<label id="idVideoBitrateLabel3" style="position: absolute;left: 628px;" class="setting_label">&nbsp;&nbsp;&nbsp; Bitrate 3</label>
+	<select id="idVideoBitrate3" class="setting_label" style='position:absolute; left:757px; width:160px;'>
+		<option selected value='128 Kbps'>128 Kbps</option>
+		<option value='256 Kbps'>256 Kbps</option>
+		<option value='512 Kbps'>512 Kbps</option>
+		<option value='768 Kbps'>768 Kbps</option>
+		<option value='1 Mbps'>1 Mbps</option>
+		<option value='2 Mbps'>2 Mbps</option>
+	</select>
+</p>
+
+<p>
+	<label id="idVideoResLabel4" class="setting_label">&nbsp;&nbsp;&nbsp; Resolution 4</label>
+	<select id="idVideoRes4" class="setting_label" style='position:absolute; left:460px; width:160px;'>
+		<option selected value='(256x144)'>256x144</option>
+		<option value='(320x180)'>320x180</option>
+		<option value='(640x360)'>640x360</option>
+		<option value='(704x396)'>704x396</option>
+		<option value='(1280x720)'>1280x720</option>
+	</select>
+
+	<label id="idVideoBitrateLabel4" style="position: absolute;left: 628px;" class="setting_label">&nbsp;&nbsp;&nbsp; Bitrate 4</label>
+	<select id="idVideoBitrate4" class="setting_label" style='position:absolute; left:757px; width:160px;'>
+		<option selected value='128 Kbps'>128 Kbps</option>
+		<option value='256 Kbps'>256 Kbps</option>
+		<option value='512 Kbps'>512 Kbps</option>
+		<option value='768 Kbps'>768 Kbps</option>
+		<option value='1 Mbps'>1 Mbps</option>
+		<option value='2 Mbps'>2 Mbps</option>
+	</select>
+</p>
+
+</fieldset>
+
+<fieldset id='idpanelAudio'  style='width:600px'>
+
+<legend class="setting_legend">Audio Settings</legend>
+
+<p>
+	<label class="setting_label">&nbsp;&nbsp;&nbsp; Audio Codec</label>
+	<select id="idAudioCodec" class="setting_label" style='position:absolute; left:460px; width:160px;'>
+		<option selected value='AAC'>AAC</option>
+		<option value='MP3'>MP3</option>
+		<option value='MP2'>MP2</option>
+	</select>
+
+</p>
+
+<p>
+	<label class="setting_label">&nbsp;&nbsp;&nbsp; Bitrate</label>
+	<select id="idAudioBitrate" class="setting_label" style='position:absolute; left:460px; width:160px;'>
+		<option selected value='128 Kbps'>128 Kbps</option>
+		<option value='256 Kbps'>256 Kbps</option>
+		<option value='384 Kbps'>384 Kbps</option>
+	</select>
+</p>
+
+</fieldset>	
+
+<fieldset id='idpanelNetwork'  style='width:600px'>
+
+<legend class="setting_legend">Network Settings</legend>
+
+<p>
+	<label class="setting_label">&nbsp;&nbsp;&nbsp; Server IP</label>
+	<input id="idServerIP" class="setting_label" type='text' style='position:absolute; left:460px; width:160px;'/>
+	<label class="setting_label" style="position: absolute;left: 628px;">&nbsp;&nbsp;&nbsp; External IP</label>
+	<input id="idExternalIP" class="setting_label" style="position:absolute; left:757px; width:160px;" type="text">
+</p>
+</p>
+
+<p>
+	<label class="setting_label">&nbsp;&nbsp;&nbsp; Server Port</label>
+	<input id="idServerPort" class="setting_label" type='text' style='position:absolute; left:460px; width:160px;'/>
+	<label class="setting_label" style="position: absolute;left: 628px;">&nbsp;&nbsp;&nbsp; External Port</label>
+	<input id="idExternalPort" class="setting_label" style="position:absolute; left:757px; width:160px;" type="text">
+</p>
+
+<p>
+	<label class="setting_label">&nbsp;&nbsp;&nbsp; HTTP Port</label>
+	<input id="idHttpPort" class="setting_label" type='text' style='position:absolute; left:460px; width:160px;'/>
+</p>
+
+</fieldset>
+
+<fieldset id='idpanelChannel'  style='width:600px'>
+
+<legend class="setting_legend">Channel Settings</legend>
+
+<p>
+	<label class="setting_label">&nbsp;&nbsp;&nbsp; </label>
+	<input id="idChannelFile" class="setting_label" id="the-file-input" type="file">
+</p>
+<p>
+	<label class="setting_label">&nbsp;&nbsp;&nbsp; Channel ID</label>
+	
+	<input id="idChannelId" class="setting_label" type='text' style='position:absolute; left:460px; width:160px;'/>
+</p>
+
+</fieldset>
+<br>
+<button id='idSaveConfig' onclick="saveConfiguration()" style="width:100px;font-family:verdana">Save</button>
+
+    </td>
+  </tr>
+</tbody></table>
+</div>
+</td>
+</tr>
+
+</table>
+
+
+
+
+</body>
+</html>
